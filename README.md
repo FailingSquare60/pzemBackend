@@ -2,9 +2,9 @@
 Integrated [TheHWCave's Pzem004T v3.0 library](https://github.com/TheHWcave/Peacefair-PZEM-004T-) with my v1.0 library to poll meters every 10 seconds via and posts to a remote mySQL database. Utilizes systemctl to manage python processes for each meter connected (Ex: to Raspberry Pi).
 
 ## Requirements
-# PZEM004T AC electrical meter
+### PZEM004T AC electrical meter
 Works with both [Pzem004T v1.0](https://innovatorsguru.com/ac-digital-multifunction-meter-using-pzem-004t/) and [Pzem004T v3.0](https://innovatorsguru.com/pzem-004t-v3/) modules
-#Raspberry Pi
+### Raspberry Pi
 - Tested on Raspberry PI 3 and 3+
 - I do NOT reccomend Pi Zeros v1 or v2 as the USB issues do not resolve without manual power cycling
 
@@ -39,10 +39,10 @@ if __name__ == '__main__':
     meter1.py()
 ```
 
-##Systemctl File Example
-```
-sudo nano /lib/systemd/system/pzemunitA.service
-```
+## Systemctl File Example
+create service file
+`sudo nano /lib/systemd/system/meter1.service`
+with contents
 ```
 [Unit] 
 Description=record pzem meter data to database(s)
@@ -55,3 +55,7 @@ RestartSec=10 User=pi
 [Install] 
 WantedBy=multi-user.target
 ```
+enable service
+`sudo systemctl enable meter1.service`
+start/stop/restart/status
+`sudo systemctl start meter1.service`
