@@ -1,0 +1,4 @@
+*.db
+.sync
+/pzem*.py
+*.pyc
