@@ -7,6 +7,8 @@ Works with both [Pzem004T v1.0](https://innovatorsguru.com/ac-digital-multifunct
 ### Raspberry Pi
 - Tested on Raspberry PI 3 and 3+
 - I do NOT reccomend Pi Zeros v1 or v2 as the USB issues do not resolve without manual power cycling
+### python libraries
+ - MySQL-Connector-Python `sudo pip3 install mysql-connector-python`
 
 ## Configuration
 1. Connect the PZEM meter per specs and connect the serial interface to a Serial-to-USB adapter into a Raspbery Pi. 
