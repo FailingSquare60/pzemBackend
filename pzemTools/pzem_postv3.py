@@ -63,7 +63,7 @@ def postMeasurements(pd, table, mysql_host, mysql_database, mysql_user, mysql_pw
     kwh = float(dEnergy)/1000
     oldEnergy = pd.Energy
     sql = "INSERT INTO " + table + " Values('{}', {:.2f}, {:d}, {:.2f}, {:.2f}, {:d}, {:.2f})".format(
-        time.strftime('%Y-%m-%d %H:%M:%S'), pd.Current, int(pd.Energy), pd.Power, pd.Volt, dEnergy, kwh)
+        time.strftime('%Y-%m-%d %H:%M:%S'), pd.Power, int(pd.Energy), pd.Current, pd.Volt, dEnergy, kwh)
     print(sql)
     count = 0
     if False:
