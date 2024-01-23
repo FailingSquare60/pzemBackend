@@ -128,13 +128,13 @@ class AC_PZEM_1:
                 self.__volt = self.readVoltage(rcvArr)
             rcvArr = self.sendCmd(ser, self.__CMD_CURRENT)
             if self.respValid(rcvArr) and valid:
-                __current = self.readCurrent(rcvArr)
+                self.__current = self.readCurrent(rcvArr)
             rcvArr = self.sendCmd(ser, self.__CMD_ENERGY)
             if self.respValid(rcvArr) and valid:
-                __energy = self.readEnergy(rcvArr)
+                self.__energy = self.readEnergy(rcvArr)
             rcvArr = self.sendCmd(ser, self.__CMD_POWER)
             if self.respValid(rcvArr) and valid:
-                __power = self.readPower(rcvArr)
+                self.__power = self.readPower(rcvArr)
 
         return valid
 
