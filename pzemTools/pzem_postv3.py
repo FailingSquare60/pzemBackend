@@ -108,7 +108,7 @@ def postMeasurements(pd, table, mysql_host, mysql_database, mysql_user, mysql_pw
         time.sleep(10)
 
 
-def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, addr=DEF_ADDR, hwversion=DEF_HWVERSION, interval=30):
+def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, addr=DEF_ADDR, hwversion=DEF_HWVERSION, interval=15):
     start = perf_counter()
     now = perf_counter()-start
     if hwversion == 'v1':
