@@ -113,9 +113,13 @@ def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
             print(f"USB connection error: {e}. Retrying in {DEF_RETRY_INTERVAL} seconds... ({retry_count}/{DEF_MAX_RETRIES})")
             sleep(DEF_RETRY_INTERVAL)
 
+            # Attempt to reset the device
             device_id = get_usb_device_id(port)
-            print(f"Resetting device id: {device_id}")
-            reset_usb_port(device_id)
+            if device_id:
+                print(f"Resetting device id: {device_id}")
+                reset_usb_port(device_id)
+            else:
+                print(f"Could not find USB device ID for port {port}.")
     print("Failed to reconnect to the USB device after multiple attempts.")
     return None
 
