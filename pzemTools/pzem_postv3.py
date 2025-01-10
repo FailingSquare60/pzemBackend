@@ -61,35 +61,44 @@ def get_usb_device_id(port):
         print(f"[ERROR] Exception in get_usb_device_id: {e}")
         return None
 
-def reset_usb_port(device_id):
+def reset_usb_port(port):
     """
-    Reset a USB port by unbinding and rebinding the device driver.
+    Reset the USB device associated with the given port by unbinding and rebinding the device driver.
 
     Args:
-        device_id (str): The USB device ID (e.g., "1-1.3").
+        port (str): The USB port (e.g., '/dev/ttyUSB0').
+
+    Returns:
+        bool: True if reset is successful, False otherwise.
     """
-    device_path = f"/sys/bus/usb/devices/{device_id}/driver"
-    
-    # Check if the device path exists
+    usb_device_id = get_usb_device_id(port)
+    if not usb_device_id:
+        print(f"[ERROR] Could not find valid USB device ID for port {port}. Cannot reset.")
+        return False
+
+    device_path = f"/sys/bus/usb/devices/{usb_device_id}/driver"
     if not os.path.exists(device_path):
-        print(f"[ERROR] Device {device_id} not found. Check the device ID.")
-        return
+        print(f"[ERROR] Device path {device_path} does not exist. Check the connection.")
+        return False
 
     try:
-        # Unbind the device
         with open(f"{device_path}/unbind", "w") as unbind_file:
-            unbind_file.write(device_id)
-        print(f"[INFO] Device {device_id} unbound successfully.")
+            unbind_file.write(usb_device_id)
+        print(f"[INFO] Device {usb_device_id} unbound successfully.")
 
-        time.sleep(2)  # Wait for 2 seconds before rebinding
+        time.sleep(2)
 
-        # Rebind the device
         with open(f"{device_path}/bind", "w") as bind_file:
-            bind_file.write(device_id)
-        print(f"[INFO] Device {device_id} rebound successfully.")
+            bind_file.write(usb_device_id)
+        print(f"[INFO] Device {usb_device_id} rebound successfully.")
+        return True
 
     except PermissionError:
-        print("[ERROR] Permission denied. Try running the script with sudo.")
+        print("[ERROR] Permission denied. Run the script with sudo.")
+        return False
+    except Exception as e:
+        print(f"[ERROR] Failed to reset device {usb_device_id}: {e}")
+        return False
 
 
 def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
