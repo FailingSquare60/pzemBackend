@@ -38,7 +38,6 @@ def get_usb_device_id(port):
         str: The USB device ID (e.g., '1-1.3') or None if not found.
     """
     try:
-        # Use udevadm to find the device path
         result = subprocess.run(
             ["udevadm", "info", "--name", port, "--query", "path"],
             stdout=subprocess.PIPE,
@@ -50,10 +49,10 @@ def get_usb_device_id(port):
             return None
 
         device_path = result.stdout.strip()
-        # Extract the USB device ID from the device path
+        # Extract the USB device ID from the path
         parts = device_path.split("/")
         for part in parts:
-            if part.startswith("1-"):  # Look for device IDs like '1-1' or '1-1.3'
+            if part.startswith("1-") and len(part.split(".")) > 1:  # Look for IDs like '1-1.3'
                 return part
 
         print("[ERROR] USB device ID not found.")
@@ -61,7 +60,6 @@ def get_usb_device_id(port):
     except Exception as e:
         print(f"[ERROR] Exception in get_usb_device_id: {e}")
         return None
-
 
 def reset_usb_port(device_id):
     """
