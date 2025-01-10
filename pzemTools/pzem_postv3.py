@@ -24,15 +24,31 @@ DEF_ADDR = 1
 DEF_HWVERSION = 'v3'
 DEF_DB = '../../pzem.db'
 DEF_TABLE = 'pzem_box'
-
+DEF_RETRY_INTERVAL = 5  # seconds
+DEF_MAX_RETRIES = 5
 
 def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
-    if hwversion == 'v3':
-        ACM = AC_PZEM_3(port)
-    else:  # v1
-        ACM = AC_PZEM_1(port)
-    pd = ACM.Poll()
-    return pd
+    """
+    Poll the meter for readings. Retry if USB connection fails.
+    """
+    retry_count = 0
+    while retry_count < DEF_MAX_RETRIES:
+        try:
+            if not os.path.exists(port):
+                raise serial.SerialException(f"Device not found at {port}")
+            if hwversion == 'v3':
+                acm = AC_PZEM_3(port)
+            else:
+                acm = AC_PZEM_1(port)
+            pd = acm.Poll()
+            return pd
+        except serial.SerialException as e:
+            retry_count += 1
+            print(f"USB connection error: {e}. Retrying in {DEF_RETRY_INTERVAL} seconds... ({retry_count}/{DEF_MAX_RETRIES})")
+            sleep(DEF_RETRY_INTERVAL)
+    print("Failed to reconnect to the USB device after multiple attempts.")
+    return None
+
 
 
 def getAddress(port=DEF_PORT, hwversion=DEF_HWVERSION):
