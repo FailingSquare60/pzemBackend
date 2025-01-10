@@ -46,22 +46,22 @@ def get_usb_device_id(port):
             text=True,
         )
         if result.returncode != 0:
-            print(f"Error: {result.stderr.strip()}")
+            print(f"[ERROR] udevadm error: {result.stderr.strip()}")
             return None
 
         device_path = result.stdout.strip()
         # Extract the USB device ID from the device path
         parts = device_path.split("/")
         for part in parts:
-            if part.startswith("usb"):
-                return part  # Return the USB device ID (e.g., '1-1.3')
-        
-        print("USB device ID not found.")
+            if part.startswith("1-"):  # Look for device IDs like '1-1' or '1-1.3'
+                return part
+
+        print("[ERROR] USB device ID not found.")
+        return None
+    except Exception as e:
+        print(f"[ERROR] Exception in get_usb_device_id: {e}")
         return None
 
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
 
 def reset_usb_port(device_id):
     """
