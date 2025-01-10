@@ -27,6 +27,72 @@ DEF_TABLE = 'pzem_box'
 DEF_RETRY_INTERVAL = 5  # seconds
 DEF_MAX_RETRIES = 5
 
+def get_usb_device_id(port):
+    """
+    Find the USB device ID (e.g., '1-1.3') associated with a given port (e.g., '/dev/ttyUSB0').
+
+    Args:
+        port (str): The device port (e.g., '/dev/ttyUSB0').
+
+    Returns:
+        str: The USB device ID (e.g., '1-1.3') or None if not found.
+    """
+    try:
+        # Use udevadm to find the device path
+        result = subprocess.run(
+            ["udevadm", "info", "--name", port, "--query", "path"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"Error: {result.stderr.strip()}")
+            return None
+
+        device_path = result.stdout.strip()
+        # Extract the USB device ID from the device path
+        parts = device_path.split("/")
+        for part in parts:
+            if part.startswith("usb"):
+                return part  # Return the USB device ID (e.g., '1-1.3')
+        
+        print("USB device ID not found.")
+        return None
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+def reset_usb_port(device_id):
+    """
+    Reset a USB port by unbinding and rebinding the device driver.
+
+    Args:
+        device_id (str): The USB device ID (e.g., "1-1.3").
+    """
+    device_path = f"/sys/bus/usb/devices/{device_id}/driver"
+    
+    # Check if the device path exists
+    if not os.path.exists(device_path):
+        print(f"Device {device_id} not found. Check the device ID.")
+        return
+
+    try:
+        # Unbind the device
+        with open(f"{device_path}/unbind", "w") as unbind_file:
+            unbind_file.write(device_id)
+        print(f"Device {device_id} unbound successfully.")
+
+        time.sleep(2)  # Wait for 2 seconds before rebinding
+
+        # Rebind the device
+        with open(f"{device_path}/bind", "w") as bind_file:
+            bind_file.write(device_id)
+        print(f"Device {device_id} rebound successfully.")
+
+    except PermissionError:
+        print("Permission denied. Try running the script with sudo.")
+
 def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
     """
     Poll the meter for readings. Retry if USB connection fails.
@@ -46,6 +112,10 @@ def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
             retry_count += 1
             print(f"USB connection error: {e}. Retrying in {DEF_RETRY_INTERVAL} seconds... ({retry_count}/{DEF_MAX_RETRIES})")
             sleep(DEF_RETRY_INTERVAL)
+
+            device_id = get_usb_device_id(port)
+            print(f"Resetting device id: {device_id}")
+            reset_usb_port(device_id)
     print("Failed to reconnect to the USB device after multiple attempts.")
     return None
 
@@ -138,6 +208,12 @@ def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, 
     else:
         print('address does not match!', currAddr)
         Continue = False
+
+    usb_device_id = get_usb_device_id(port)
+    if usb_device_id:
+        print(f"USB device ID for port {port}: {usb_device_id}")
+    else:
+        print(f"Could not find USB device ID for port {port}.")
 
     while Continue:
         try:
