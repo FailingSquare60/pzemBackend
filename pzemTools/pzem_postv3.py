@@ -201,51 +201,74 @@ def postMeasurements(pd, table, mysql_host, mysql_database, mysql_user, mysql_pw
 
 def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, addr=DEF_ADDR, hwversion=DEF_HWVERSION, interval=15):
     start = perf_counter()
-    now = perf_counter()-start
+    now = perf_counter() - start
 
-    #Get usb_device_id
+    # Get usb_device_id
     usb_device_id = get_usb_device_id(port)
     if usb_device_id:
         print(f"USB device ID for port {port}: {usb_device_id}")
     else:
         print(f"Could not find USB device ID for port {port}.")
 
-    #reset usb if needed
-    if not os.path.exists(port):
-        print(f"Port {port} not available. Resetting USB device {usb_device_id}.")
-        reset_usb_port(usb_device_id)
+    # Reset USB if needed
+    try:
+        if hwversion == 'v1':
+            currAddr = addr  # TODO: Make V1 address read/set
+        elif hwversion == 'v3':
+            currAddr = getAddress(port, hwversion)  # Only for v3
 
+        if addr == currAddr:
+            print('Address matches! ', currAddr)
+            Continue = True
+        else:
+            print('Address does not match!', currAddr)
+            Continue = False
 
-    if hwversion == 'v1':
-        currAddr = addr  # TODO make V1 address read/set
-    elif hwversion == 'v3':
-        currAddr = getAddress(port, hwversion)  # only for v3
-
-    if addr == currAddr:
-        print('address matches! ', currAddr)
-        Continue = True  # need a hwversion catch for V1
-    else:
-        print('address does not match!', currAddr)
-        Continue = False
+    except OSError as e:
+        if e.errno == 5:  # Errno 5: Input/output error
+            print(f"[ERROR] Input/output error on port {port}: {e}.")
+            usb_device_id = get_usb_device_id(port)
+            if usb_device_id:
+                print(f"[INFO] Attempting to reset USB device {usb_device_id}.")
+                reset_usb_port(port)
+                time.sleep(5)  # Allow the device to reinitialize
+            else:
+                print(f"[ERROR] Could not find USB device ID for port {port}. Reset failed.")
+            return  # Exit if USB reset fails
+        else:
+            print(f"[ERROR] Unexpected OSError: {e}")
+            return
 
     while Continue:
         try:
-            now = perf_counter()-start
-
-            print('polling meter at port ', port)
+            now = perf_counter() - start
+            print('Polling meter at port ', port)
             pd = pollMeter(port, hwversion)
             if pd is not None:
-                print('posting measurements to table ', mysql_database)
+                print('Posting measurements to table ', mysql_database)
                 postMeasurements(pd, table, mysql_host, mysql_database, mysql_user, mysql_pw)
             else:
-                print("pd is None, not posting to database")
+                print("[WARNING] Polling returned None. Skipping database posting.")
 
-            elapsed = (perf_counter()-start) - now
+            elapsed = (perf_counter() - start) - now
             if elapsed < interval:
-                sleep(interval - elapsed) #seconds
+                sleep(interval - elapsed)  # Sleep for remaining interval
+        except OSError as e:
+            if e.errno == 5:  # Handle USB I/O error during polling
+                print(f"[ERROR] Input/output error on port {port}: {e}. Attempting to reset.")
+                if usb_device_id:
+                    reset_usb_port(port)
+                    time.sleep(5)  # Allow the device to reinitialize
+                else:
+                    print("[ERROR] USB device ID not found. Exiting.")
+                    break
         except KeyboardInterrupt:
-            print("Pzem Run interrupted")
+            print("[INFO] Pzem Run interrupted by user.")
+            break
+        except Exception as e:
+            print(f"[ERROR] Unexpected error: {e}")
             time.sleep(5)
+
 
 
 if __name__ == "__main__":
