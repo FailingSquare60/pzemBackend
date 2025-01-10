@@ -74,24 +74,25 @@ def reset_usb_port(device_id):
     
     # Check if the device path exists
     if not os.path.exists(device_path):
-        print(f"Device {device_id} not found. Check the device ID.")
+        print(f"[ERROR] Device {device_id} not found. Check the device ID.")
         return
 
     try:
         # Unbind the device
         with open(f"{device_path}/unbind", "w") as unbind_file:
             unbind_file.write(device_id)
-        print(f"Device {device_id} unbound successfully.")
+        print(f"[INFO] Device {device_id} unbound successfully.")
 
         time.sleep(2)  # Wait for 2 seconds before rebinding
 
         # Rebind the device
         with open(f"{device_path}/bind", "w") as bind_file:
             bind_file.write(device_id)
-        print(f"Device {device_id} rebound successfully.")
+        print(f"[INFO] Device {device_id} rebound successfully.")
 
     except PermissionError:
-        print("Permission denied. Try running the script with sudo.")
+        print("[ERROR] Permission denied. Try running the script with sudo.")
+
 
 def pollMeter(port=DEF_PORT, hwversion=DEF_HWVERSION):
     """
@@ -201,6 +202,20 @@ def postMeasurements(pd, table, mysql_host, mysql_database, mysql_user, mysql_pw
 def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, addr=DEF_ADDR, hwversion=DEF_HWVERSION, interval=15):
     start = perf_counter()
     now = perf_counter()-start
+
+    #Get usb_device_id
+    usb_device_id = get_usb_device_id(port)
+    if usb_device_id:
+        print(f"USB device ID for port {port}: {usb_device_id}")
+    else:
+        print(f"Could not find USB device ID for port {port}.")
+
+    #reset usb if needed
+    if not os.path.exists(port):
+        print(f"Port {port} not available. Resetting USB device {usb_device_id}.")
+        reset_usb_port(usb_device_id)
+
+
     if hwversion == 'v1':
         currAddr = addr  # TODO make V1 address read/set
     elif hwversion == 'v3':
@@ -212,12 +227,6 @@ def run(table, mysql_host, mysql_database, mysql_user, mysql_pw, port=DEF_PORT, 
     else:
         print('address does not match!', currAddr)
         Continue = False
-
-    usb_device_id = get_usb_device_id(port)
-    if usb_device_id:
-        print(f"USB device ID for port {port}: {usb_device_id}")
-    else:
-        print(f"Could not find USB device ID for port {port}.")
 
     while Continue:
         try:
